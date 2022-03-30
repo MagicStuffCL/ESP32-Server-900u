@@ -1,3 +1,5 @@
+This is exactly the same project as stooged, but with the settings for s2 mini, you can enable microsd or oled screen (shields), for now I will leave the version just to activate the s2 mini led and know that it is on, I will add the others changes in the next few days
+
 # ESP32 Server 9.00u
 
 <br>
