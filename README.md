@@ -1,5 +1,7 @@
 This is exactly the same project as stooged, but with the settings for s2 mini, you can enable microsd or oled screen (shields) (you need set sdcard to true or oled true)
 
+![Microsd + Oled](https://i.ibb.co/0nYVLzt/P-20220317-215821.jpg)
+
 ![Microsd Status](https://i.ibb.co/Kq1mBxM/unknown.png)
 
 ![Oled Microsd](https://i.ibb.co/hRXTD0j/P-20220320-052004.jpg)
