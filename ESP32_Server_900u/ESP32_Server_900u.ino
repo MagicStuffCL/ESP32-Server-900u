@@ -1099,18 +1099,23 @@ void screenStatusCard()
 }
 void screenTime()
 {
-   timeClient.update();
-   display.clear();
-   drawText(64,20,"NTP CLOCK");
-   drawText(65,40,String(timeClient.getHours()) + ":" + String(timeClient.getMinutes())+ ":" + String(timeClient.getSeconds()));
-   display.display();  
+  if(connectWifi)
+  {
+     timeClient.update();
+     display.clear();
+     drawText(64,20,"NTP CLOCK");
+     drawText(65,40,String(timeClient.getHours()) + ":" + String(timeClient.getMinutes())+ ":" + String(timeClient.getSeconds()));
+     display.display();  
+  }
+  else
+  {
+    drawText(64,20,"NTP CLOCK");
+    drawText(65,40,"NEED INTERNET");
+  }
+  
 }
-#if(USEOLED)
-  #if(connectWifi)  
-    Demo demos[] = {screenStatusReady,screenTime,screenStatusCard};  
-  #else  
-    Demo demos[] = {screenStatusReady,screenStatusCard};
-  #endif
+#if(USEOLED)   
+  Demo demos[] = {screenStatusReady,screenTime,screenStatusCard};   
   int demoLength = (sizeof(demos) / sizeof(Demo));
   long timeSinceLastModeSwitch = 0;
 #endif
