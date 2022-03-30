@@ -1,4 +1,11 @@
 This is exactly the same project as stooged, but with the settings for s2 mini, you can enable microsd or oled screen (shields) (you need set sdcard to true or oled true)
+
+![Microsd Status](https://i.ibb.co/Kq1mBxM/unknown.png)
+
+![Oled Microsd](https://i.ibb.co/hRXTD0j/P-20220320-052004.jpg)
+
+![NTP Clock](https://i.ibb.co/wCwQp8L/P-20220320-052035.jpg)
+
 # ESP32 Server 9.00u
 
 <br>
