@@ -68,8 +68,8 @@ IPAddress Subnet_Mask(255,255,255,0);
 
 //connect to wifi
 boolean connectWifi = false;
-String WIFI_SSID = "Home_WIFI";
-String WIFI_PASS = "password";
+String WIFI_SSID = "WIFIESSID";
+String WIFI_PASS = "PASSWIFI";
 String WIFI_HOSTNAME = "ps4.local";
 
 //server port
@@ -91,10 +91,20 @@ String firmwareVer = "1.00";
 #if USESD
 #include "SD.h"
 #include "SPI.h"
+#if defined(CONFIG_IDF_TARGET_ESP32S2)
+#define SCK 7   // pins for sd card
+#define MISO 9  // these values are set for the LILYGO TTGO T8 ESP32-S2 board
+#define MOSI 11  // you may need to change these for other boards
+#define SS 16
+#define FILESYS SD 
+#include "SPIFFS.h"
+#define FILESYSINTERNAL SPIFFS 
+#else 
 #define SCK 12   // pins for sd card
 #define MISO 13  // these values are set for the LILYGO TTGO T8 ESP32-S2 board
 #define MOSI 11  // you may need to change these for other boards
 #define SS 10
+#endif
 #define FILESYS SD 
 #else
 #if USEFAT
@@ -169,15 +179,15 @@ return true;
 }
 
 
-String formatBytes(size_t bytes){
-  if (bytes < 1024){
-    return String(bytes)+" B";
-  } else if(bytes < (1024 * 1024)){
-    return String(bytes/1024.0)+" KB";
-  } else if(bytes < (1024 * 1024 * 1024)){
-    return String(bytes/1024.0/1024.0)+" MB";
+String formatBytes(uint64_t number){
+  if (number < 1024){
+    return String(long(number))+" B";
+  } else if(number < (1024 * 1024)){
+    return String(number/1024.0)+" KB";
+  } else if(number < (1024 * 1024 * 1024)){
+    return String(number/1024.0/1024.0)+" MB";
   } else {
-    return String(bytes/1024.0/1024.0/1024.0)+" GB";
+    return String(number/1024.0/1024.0/1024.0)+" GB";
   }
 }
 
@@ -589,17 +599,39 @@ void handleInfo(AsyncWebServerRequest *request)
   output += "Flash write mode: " + String((ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN")) + "<br><hr>";
   output += "###### Storage information ######<br><br>";
 #if USESD
+{
   output += "Storage Device: SD<br>";
-#elif USEFAT
-  output += "Filesystem: FatFs<br>";
-#elif USELFS
-  output += "Filesystem: LittleFS<br>";
-#else
+  output += "Total Size: " + formatBytes(FILESYS.totalBytes()) + "<br>";
+  output += "Used Space: " + formatBytes(FILESYS.usedBytes()) + "<br>";
+  output += "Free Space: " + formatBytes(FILESYS.totalBytes() - FILESYS.usedBytes()) + "<br><br>";
   output += "Filesystem: SPIFFS<br>";
-#endif
+  output += "Total Size: " + formatBytes(FILESYSINTERNAL.totalBytes()) + "<br>";
+  output += "Used Space: " + formatBytes(FILESYSINTERNAL.usedBytes()) + "<br>";
+  output += "Free Space: " + formatBytes(FILESYSINTERNAL.totalBytes() - FILESYS.usedBytes()) + "<br><hr>";
+}
+#elif USEFAT
+{
+  output += "Filesystem: FatFs<br>";
   output += "Total Size: " + formatBytes(FILESYS.totalBytes()) + "<br>";
   output += "Used Space: " + formatBytes(FILESYS.usedBytes()) + "<br>";
   output += "Free Space: " + formatBytes(FILESYS.totalBytes() - FILESYS.usedBytes()) + "<br><hr>";
+}
+#elif USELFS
+{
+  output += "Filesystem: LittleFS<br>";
+  output += "Total Size: " + formatBytes(FILESYS.totalBytes()) + "<br>";
+  output += "Used Space: " + formatBytes(FILESYS.usedBytes()) + "<br>";
+  output += "Free Space: " + formatBytes(FILESYS.totalBytes() - FILESYS.usedBytes()) + "<br><hr>";
+}
+#else
+{
+  output += "Filesystem: SPIFFS<br>";
+  output += "Total Size: " + formatBytes(FILESYS.totalBytes()) + "<br>";
+  output += "Used Space: " + formatBytes(FILESYS.usedBytes()) + "<br>";
+  output += "Free Space: " + formatBytes(FILESYS.totalBytes() - FILESYS.usedBytes()) + "<br><hr>";
+}
+#endif
+
 #if defined(CONFIG_IDF_TARGET_ESP32S2) | defined(CONFIG_IDF_TARGET_ESP32S3)
   if (ESP.getPsramSize() > 0)
   {
@@ -654,6 +686,7 @@ void setup(){
 #if USESD
   SPI.begin(SCK, MISO, MOSI, SS);
   if (FILESYS.begin(SS, SPI)) {
+    FILESYSINTERNAL.begin(true);  
 #else
   if (FILESYS.begin(true)) {
 #endif
