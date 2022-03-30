@@ -21,6 +21,10 @@
                         // use OLED Shield for s2 Mini [ true / false ]
 #define USEOLED false   // shows different data on an oled screen.
                         // this requires a board with a wemos oled shield connected or generic.
+
+                        // use OLED Shield for s2 Mini [ true / false ]
+#define NTPCLOCK false   // dshow a simple ntp clock.
+                        // this requires internet.
                      
                      // use SD Card [ true / false ]
 #define USESD false  // a FAT32 formatted SD Card will be used instead of the onboard flash for the storage.
@@ -154,8 +158,10 @@ USBMSC dev;
   typedef void (*Demo)(void);
   int demoMode = 0;
   const long utcOffsetInSeconds = -10800;
-  WiFiUDP ntpUDP;
-  NTPClient timeClient(ntpUDP, "ntp.shoa.cl", utcOffsetInSeconds);
+  #if NTPCLOCK
+    WiFiUDP ntpUDP;
+    NTPClient timeClient(ntpUDP, "ntp.shoa.cl", utcOffsetInSeconds);
+  #endif
 #endif
 
 /*
@@ -1066,56 +1072,58 @@ void setup(){
   //HWSerial.println("HTTP server started");
 
   bootTime = millis();
-  if(USEOLED){
+  #if(USEOLED)
     display.init();
     display.flipScreenVertically();
     display.setFont(ArialMT_Plain_10);
-  }
+  #endif
 }
+#if(USEOLED)
 void drawText(int h,int v,String message ) {
+
+
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setFont(ArialMT_Plain_10);
   display.drawString(h, v, message);//first argument horizontal, second vertical
+
 }
 void screenStatusReady()
 {
+
+
    display.clear();
    drawText(64,20,"GOLDHEN");
    drawText(64,35,"SERVER");
    drawText(65,50,"READY");
    display.display();
+
 }
 void screenStatusCard()
 {
-  if(USESD)
-  {
+
    display.clear();
    drawText(55,20,"Sd Card :");
    drawText(63,30,"enabled");
    drawText(46,40,"Size :");
    drawText(66,50,formatBytes(FILESYS.totalBytes()));
    display.display();
-  }
+
 }
 void screenTime()
 {
-  if(connectWifi)
-  {
-     timeClient.update();
-     display.clear();
-     drawText(64,20,"NTP CLOCK");
-     drawText(65,40,String(timeClient.getHours()) + ":" + String(timeClient.getMinutes())+ ":" + String(timeClient.getSeconds()));
-     display.display();  
-  }
-  else
-  {
-    drawText(64,20,"NTP CLOCK");
-    drawText(65,40,"NEED INTERNET");
-  }
   
+   timeClient.update();
+   display.clear();
+   drawText(64,20,"NTP CLOCK");
+   drawText(65,40,String(timeClient.getHours()) + ":" + String(timeClient.getMinutes())+ ":" + String(timeClient.getSeconds()));
+   display.display();     
 }
-#if(USEOLED)   
-  Demo demos[] = {screenStatusReady,screenTime,screenStatusCard};   
+
+  #if(NTPCLOCK)  
+    Demo demos[] = {screenStatusReady,screenTime,screenStatusCard};  
+  #else  
+    Demo demos[] = {screenStatusReady,screenStatusCard};
+  #endif
   int demoLength = (sizeof(demos) / sizeof(Demo));
   long timeSinceLastModeSwitch = 0;
 #endif
@@ -1197,7 +1205,7 @@ void loop(){
       digitalWrite(LED, HIGH);
   }
   #endif
-  if(USEOLED)
+  #if(USEOLED)
   {
      demos[demoMode]();
      if (millis() - timeSinceLastModeSwitch > DEMO_DURATION) {
@@ -1205,5 +1213,6 @@ void loop(){
       timeSinceLastModeSwitch = millis();
      }
   }
+  #endif
    dnsServer.processNextRequest();
 }
