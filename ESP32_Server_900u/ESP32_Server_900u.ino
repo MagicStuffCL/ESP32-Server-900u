@@ -18,7 +18,10 @@
 #error "Selected board not supported"
 #endif
 
-
+                        // use OLED Shield for s2 Mini [ true / false ]
+#define USEOLED false   // shows different data on an oled screen.
+                        // this requires a board with a wemos oled shield connected or generic.
+                     
                      // use SD Card [ true / false ]
 #define USESD false  // a FAT32 formatted SD Card will be used instead of the onboard flash for the storage.
                      // this requires a board with a sd card slot or a sd card connected.
@@ -68,8 +71,8 @@ IPAddress Subnet_Mask(255,255,255,0);
 
 //connect to wifi
 boolean connectWifi = false;
-String WIFI_SSID = "WIFIESSID";
-String WIFI_PASS = "PASSWIFI";
+String WIFI_SSID = "WIFISSID";
+String WIFI_PASS = "WIFIPASS";
 String WIFI_HOSTNAME = "ps4.local";
 
 //server port
@@ -141,6 +144,19 @@ File upFile;
 USBMSC dev;
 #endif
 
+
+#if USEOLED
+  #include "SSD1306Wire.h"  
+  #include "images.h"
+  #include <NTPClient.h>
+  SSD1306Wire display(0x3c, 33, 35);  
+  #define DEMO_DURATION 15000
+  typedef void (*Demo)(void);
+  int demoMode = 0;
+  const long utcOffsetInSeconds = -10800;
+  WiFiUDP ntpUDP;
+  NTPClient timeClient(ntpUDP, "ntp.shoa.cl", utcOffsetInSeconds);
+#endif
 
 /*
 #if ARDUINO_USB_CDC_ON_BOOT
@@ -1050,8 +1066,54 @@ void setup(){
   //HWSerial.println("HTTP server started");
 
   bootTime = millis();
+  if(USEOLED){
+    display.init();
+    display.flipScreenVertically();
+    display.setFont(ArialMT_Plain_10);
+  }
 }
-
+void drawText(int h,int v,String message ) {
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(h, v, message);//first argument horizontal, second vertical
+}
+void screenStatusReady()
+{
+   display.clear();
+   drawText(64,20,"GOLDHEN");
+   drawText(64,35,"SERVER");
+   drawText(65,50,"READY");
+   display.display();
+}
+void screenStatusCard()
+{
+  if(USESD)
+  {
+   display.clear();
+   drawText(55,20,"Sd Card :");
+   drawText(63,30,"enabled");
+   drawText(46,40,"Size :");
+   drawText(66,50,formatBytes(FILESYS.totalBytes()));
+   display.display();
+  }
+}
+void screenTime()
+{
+   timeClient.update();
+   display.clear();
+   drawText(64,20,"NTP CLOCK");
+   drawText(65,40,String(timeClient.getHours()) + ":" + String(timeClient.getMinutes())+ ":" + String(timeClient.getSeconds()));
+   display.display();  
+}
+#if(USEOLED)
+  #if(connectWifi)  
+    Demo demos[] = {screenStatusReady,screenTime,screenStatusCard};  
+  #else  
+    Demo demos[] = {screenStatusReady,screenStatusCard};
+  #endif
+  int demoLength = (sizeof(demos) / sizeof(Demo));
+  long timeSinceLastModeSwitch = 0;
+#endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32S2) | defined(CONFIG_IDF_TARGET_ESP32S3)
 static int32_t onRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize){
@@ -1130,5 +1192,13 @@ void loop(){
       digitalWrite(LED, HIGH);
   }
   #endif
+  if(USEOLED)
+  {
+     demos[demoMode]();
+     if (millis() - timeSinceLastModeSwitch > DEMO_DURATION) {
+      demoMode = (demoMode + 1)  % demoLength;
+      timeSinceLastModeSwitch = millis();
+     }
+  }
    dnsServer.processNextRequest();
 }
