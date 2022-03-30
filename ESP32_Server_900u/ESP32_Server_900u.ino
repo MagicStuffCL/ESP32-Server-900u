@@ -10,6 +10,7 @@
 #include "USB.h"
 #include "USBMSC.h"
 #include "exfathax.h"
+#define LED 15
 #elif defined(CONFIG_IDF_TARGET_ESP32)  // ESP32 BOARDS
 #define USBCONTROL false // set to true if you are using usb control(wired up usb drive)
 #define usbPin 4  // set the pin you want to use for usb control
@@ -641,7 +642,7 @@ void setup(){
   //HWSerial.begin(115200);
   //HWSerial.println("Version: " + firmwareVer);
   //USBSerial.begin();
-  
+
 #if USBCONTROL && defined(CONFIG_IDF_TARGET_ESP32)
   pinMode(usbPin, OUTPUT); 
   digitalWrite(usbPin, LOW);
@@ -1085,10 +1086,16 @@ void loop(){
     FILESYS.format();
     FILESYS.begin(true);
     delay(1000);
-#if USECONFIG
-    writeConfig();
-#endif
+    #if USECONFIG
+        writeConfig();
+    #endif
    } 
 #endif
+  #if defined(CONFIG_IDF_TARGET_ESP32S2) 
+  {
+      pinMode(LED, OUTPUT);
+      digitalWrite(LED, HIGH);
+  }
+  #endif
    dnsServer.processNextRequest();
 }
