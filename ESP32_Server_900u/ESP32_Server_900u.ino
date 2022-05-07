@@ -157,7 +157,7 @@ USBMSC dev;
   #define DEMO_DURATION 15000
   typedef void (*Demo)(void);
   int demoMode = 0;
-  const long utcOffsetInSeconds = -10800;
+  const long utcOffsetInSeconds = -14400;
   #if NTPCLOCK
     WiFiUDP ntpUDP;
     NTPClient timeClient(ntpUDP, "ntp.shoa.cl", utcOffsetInSeconds);
@@ -1074,7 +1074,7 @@ void setup(){
   bootTime = millis();
   #if(USEOLED)
     display.init();
-    display.flipScreenVertically();
+    //display.flipScreenVertically();
     display.setFont(ArialMT_Plain_10);
   #endif
 }
